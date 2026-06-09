@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./Chat.css";
 import api from "../services/api";
+import Sidebar from "../components/Sidebar";
 
 const SUGGESTIONS = [
   {
@@ -285,67 +286,16 @@ export default function Chat() {
       </div>
 
       {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "open" : "closed"}`}>
-        {/* Logo */}
-        <div className="sidebar-logo">
-          <div className="logo-icon"><SparkleIcon /></div>
-          <span className="logo-text">DocuMind AI</span>
-        </div>
-
-        {/* New Chat */}
-        <div className="sidebar-top">
-          <button className="new-chat-btn" onClick={newChat}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            <span>New chat</span>
-          </button>
-        </div>
-
-        {/* History */}
-        <div className="sidebar-section flex-1">
-          <div className="section-title">Chat history</div>
-          <ul className="history-list">
-            {history.map((chat) => (
-              <li
-                key={chat._id}
-                onClick={() => loadChat(chat._id)}
-                className={chat._id === currentChatId ? "active" : ""}
-              >
-                <div className="history-icon">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </div>
-                <div className="history-text">
-                  <span className="history-title">{chat.title}</span>
-                  <span className="history-time">{timeAgo(chat.updatedAt || chat.createdAt)}</span>
-                </div>
-                <button className="history-menu-btn" onClick={(e) => e.stopPropagation()} aria-label="More options">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-                </button>
-              </li>
-            ))}
-            {history.length === 0 && <li className="muted">No previous chats</li>}
-          </ul>
-        </div>
-
-        {/* User Profile */}
-        <div className="sidebar-profile">
-          <div className="profile-avatar">{userName.charAt(0).toUpperCase()}</div>
-          <div className="profile-info">
-            <span className="profile-name">{userName}</span>
-            <span className="profile-email">{userEmail}</span>
-          </div>
-          <button className="profile-chevron" aria-label="Profile options">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-          </button>
-        </div>
-
-        {/* Logout */}
-        <div className="sidebar-bottom">
-          <button className="logout-btn" onClick={logout}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Logout
-          </button>
-        </div>
-      </aside>
+      <Sidebar
+  sidebarOpen={sidebarOpen}
+  history={history}
+  currentChatId={currentChatId}
+  loadChat={loadChat}
+  newChat={newChat}
+  logout={logout}
+  userName={userName}
+  userEmail={userEmail}
+/>
 
       {/* Main */}
       <main className="chat-main">
