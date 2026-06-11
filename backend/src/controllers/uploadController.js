@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import mammoth from "mammoth";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
@@ -15,30 +16,42 @@ export const uploadDocument = async (req, res) => {
       });
     }
 
-    // Check if document already exists
-    const existingDoc = await Document.findOne({
-  user: req.user.id,
-  fileName: req.file.originalname,
-});
-
-console.log("Existing doc:", existingDoc ? "FOUND" : "NOT FOUND");
-
-if (existingDoc) {
-  console.log("RETURNING CACHED DOCUMENT");
-
-  return res.status(200).json({
-    success: true,
-    message: "Document loaded from database",
-    documentId: existingDoc._id,
-    fileName: existingDoc.fileName,
-    chunkCount: existingDoc.chunks.length,
-    cached: true,
-  });
-}
-
-console.log("GENERATING EMBEDDINGS");
-
     const filePath = req.file.path;
+
+    const fileBuffer = fs.readFileSync(filePath);
+
+    const fileHash = crypto
+      .createHash("sha256")
+      .update(fileBuffer)
+      .digest("hex");
+
+    console.log("File Hash:", fileHash);
+    console.log("Looking up hash:", fileHash);
+
+    const existingDoc = await Document.findOne({
+      user: req.user.id,
+      fileHash,
+    });
+
+    console.log(
+      "Existing doc:",
+      existingDoc ? "FOUND" : "NOT FOUND"
+    );
+
+    if (existingDoc) {
+      console.log("RETURNING CACHED DOCUMENT");
+
+      return res.status(200).json({
+        success: true,
+        message: "Document loaded from database",
+        documentId: existingDoc._id,
+        fileName: existingDoc.fileName,
+        chunkCount: existingDoc.chunks.length,
+        cached: true,
+      });
+    }
+
+    console.log("GENERATING EMBEDDINGS");
 
     const extension = path
       .extname(req.file.originalname)
@@ -46,7 +59,6 @@ console.log("GENERATING EMBEDDINGS");
 
     let extractedText = "";
 
-    // PDF
     if (extension === ".pdf") {
       const loader = new PDFLoader(filePath);
 
@@ -57,7 +69,6 @@ console.log("GENERATING EMBEDDINGS");
         .join("\n");
     }
 
-    // TXT
     else if (extension === ".txt") {
       extractedText = fs.readFileSync(
         filePath,
@@ -65,7 +76,6 @@ console.log("GENERATING EMBEDDINGS");
       );
     }
 
-    // DOCX
     else if (extension === ".docx") {
       const result = await mammoth.extractRawText({
         path: filePath,
@@ -93,29 +103,42 @@ console.log("GENERATING EMBEDDINGS");
     );
 
     console.log(
-      "Chunks created:",
-      chunks.length
+    "Chunks created:",
+    chunks.length
     );
+
+    const startTime = Date.now();
 
     const chunkObjects = [];
 
     for (const chunk of chunks) {
-      const embeddingResponse =
+    const embeddingResponse =
         await ai.models.embedContent({
-          model: "gemini-embedding-2",
-          contents: chunk,
+        model: "gemini-embedding-2",
+        contents: chunk,
         });
 
-      chunkObjects.push({
+    chunkObjects.push({
         text: chunk,
         embedding:
-          embeddingResponse.embeddings[0].values,
-      });
+        embeddingResponse.embeddings[0].values,
+    });
     }
+
+    const totalTime = Date.now() - startTime;
+
+    console.log(
+    `Sequential embeddings took ${totalTime} ms`
+    );
+
+    console.log(
+    `Average per chunk: ${(totalTime / chunks.length).toFixed(2)} ms`
+    );
 
     const document = await Document.create({
       user: req.user.id,
       fileName: req.file.originalname,
+      fileHash,
       chunks: chunkObjects,
     });
 

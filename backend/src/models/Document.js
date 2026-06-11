@@ -13,6 +13,12 @@ const documentSchema = new mongoose.Schema(
       required: true,
     },
 
+    // SHA256 hash of uploaded file
+    fileHash: {
+      type: String,
+      required: false,
+    },
+
     chunks: [
       {
         text: {
@@ -31,6 +37,12 @@ const documentSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Optional but recommended for faster lookups
+documentSchema.index({
+  user: 1,
+  fileHash: 1,
+});
 
 export default mongoose.model(
   "Document",
