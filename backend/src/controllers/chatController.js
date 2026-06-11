@@ -82,8 +82,11 @@ export const askQuestion = async (
   res
 ) => {
   try {
-    const { question, chatId } =
-      req.body;
+    const {
+      question,
+      chatId,
+      documentId,
+    } = req.body;
 
     if (!question) {
       return res.status(400).json({
@@ -93,11 +96,22 @@ export const askQuestion = async (
       });
     }
 
-    // Generate question embedding
+    const document =
+      await Document.findOne({
+        _id: documentId,
+        user: req.user.id,
+      });
+
+    if (!document) {
+      return res.status(404).json({
+        success: false,
+        message: "Document not found",
+      });
+    }
+
     const embeddingResponse =
       await ai.models.embedContent({
-        model:
-          "gemini-embedding-2",
+        model: "gemini-embedding-2",
         contents: question,
       });
 
@@ -105,34 +119,26 @@ export const askQuestion = async (
       embeddingResponse.embeddings[0]
         .values;
 
-    // Get user's documents
-    const documents =
-      await Document.find({
-        user: req.user.id,
-      });
-
     const scoredChunks = [];
 
-    for (const document of documents) {
-      for (const chunk of document.chunks) {
-        if (
-          !chunk.embedding ||
-          chunk.embedding.length === 0
-        ) {
-          continue;
-        }
-
-        const score =
-          cosineSimilarity(
-            questionEmbedding,
-            chunk.embedding
-          );
-
-        scoredChunks.push({
-          text: chunk.text,
-          score,
-        });
+    for (const chunk of document.chunks) {
+      if (
+        !chunk.embedding ||
+        chunk.embedding.length === 0
+      ) {
+        continue;
       }
+
+      const score =
+        cosineSimilarity(
+          questionEmbedding,
+          chunk.embedding
+        );
+
+      scoredChunks.push({
+        text: chunk.text,
+        score,
+      });
     }
 
     scoredChunks.sort(
@@ -140,7 +146,7 @@ export const askQuestion = async (
     );
 
     const topChunks =
-      scoredChunks.slice(0, 3);
+      scoredChunks.slice(0, 5);
 
     const context = topChunks
       .map((chunk) => chunk.text)
@@ -158,8 +164,7 @@ ${question}
 
     const response =
       await ai.models.generateContent({
-        model:
-          "gemini-2.5-flash-lite",
+        model: "gemini-2.5-flash-lite",
         contents: prompt,
       });
 

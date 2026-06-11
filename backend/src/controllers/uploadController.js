@@ -44,14 +44,12 @@ export const uploadDocument = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: "Document loaded from database",
-        documentId: existingDoc._id,
+        _id: existingDoc._id,
         fileName: existingDoc.fileName,
         chunkCount: existingDoc.chunks.length,
         cached: true,
       });
     }
-
-    console.log("GENERATING EMBEDDINGS");
 
     const extension = path
       .extname(req.file.originalname)
@@ -102,13 +100,6 @@ export const uploadDocument = async (req, res) => {
       extractedText
     );
 
-    console.log(
-    "Chunks created:",
-    chunks.length
-    );
-
-    const startTime = Date.now();
-
     const chunkObjects = [];
 
     for (const chunk of chunks) {
@@ -125,16 +116,6 @@ export const uploadDocument = async (req, res) => {
     });
     }
 
-    const totalTime = Date.now() - startTime;
-
-    console.log(
-    `Sequential embeddings took ${totalTime} ms`
-    );
-
-    console.log(
-    `Average per chunk: ${(totalTime / chunks.length).toFixed(2)} ms`
-    );
-
     const document = await Document.create({
       user: req.user.id,
       fileName: req.file.originalname,
@@ -146,7 +127,7 @@ export const uploadDocument = async (req, res) => {
       success: true,
       message:
         "Document uploaded successfully",
-      documentId: document._id,
+      _id: document._id,
       fileName: document.fileName,
       chunkCount: chunks.length,
       cached: false,

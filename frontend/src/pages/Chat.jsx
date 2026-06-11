@@ -201,6 +201,7 @@ export default function Chat() {
     setMessages((m) => [...m, { role: "user", content: q, doc: activeDoc?.fileName, time: ts }]);
     setLoading(true);
     try {
+      
       const { data } = await api.post("/api/chat", {
         question: q,
         chatId: currentChatId,
