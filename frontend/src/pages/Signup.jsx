@@ -39,6 +39,8 @@ export default function Signup() {
       const data = await signupUser(name, email, password);
 
       localStorage.setItem("token", data.token);
+      localStorage.setItem("userName", data.user.name);
+      localStorage.setItem("userEmail", data.user.email);
       localStorage.setItem("user", JSON.stringify(data.user));
 
       navigate("/chat");
