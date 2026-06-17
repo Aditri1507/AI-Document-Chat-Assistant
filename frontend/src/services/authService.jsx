@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://ai-document-chat-assistant.onrender.com/api/auth";
 
 export const loginUser = async (email, password) => {
   const response = await axios.post(`${API_URL}/login`, {
