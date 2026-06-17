@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
-import Sidebar from "../components/Sidebar";
+import Sidebar from "../components/TempSidebar";
 
 const SUGGESTIONS = [
   {
